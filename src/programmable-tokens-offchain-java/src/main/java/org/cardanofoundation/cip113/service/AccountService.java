@@ -22,7 +22,12 @@ public class AccountService {
     private final UtxoProvider utxoProvider;
 
     public List<Utxo> findAdaOnlyUtxo(String address, Long minAdaBalance) {
-        return this.findAdaOnlyUtxo(address, minAdaBalance, utxoProvider::findUtxos);
+        // findUtxosLive bypasses Yaci-store and goes straight to Blockfrost,
+        // dodging the indexer lag that returned spent UTxOs on this preview
+        // deployment (cf. ConwayMempoolFailure "All inputs are spent" when
+        // building the cip113 mint tx after an orchestrator state-tx
+        // consumed the same admin wallet's UTxOs seconds earlier).
+        return this.findAdaOnlyUtxo(address, minAdaBalance, utxoProvider::findUtxosLive);
     }
 
     public List<Utxo> findAdaOnlyUtxoByPaymentPubKeyHash(String paymentPkh, Long minAdaBalance) {

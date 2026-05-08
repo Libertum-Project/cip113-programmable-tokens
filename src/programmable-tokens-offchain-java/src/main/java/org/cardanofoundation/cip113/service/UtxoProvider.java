@@ -72,6 +72,22 @@ public class UtxoProvider {
 
     }
 
+    /**
+     * Live UTxO lookup that bypasses the Yaci-store cache entirely.
+     *
+     * Yaci-store's block sync runs ~1 block every 1-2 minutes on this preview
+     * deployment, putting it minutes behind chain tip. For fee-payer UTxO
+     * selection that lag returns already-spent UTxOs, causing
+     * ConwayMempoolFailure "All inputs are spent" on submission.
+     *
+     * Blockfrost's indexer follows tip more aggressively (a few seconds) so
+     * use it directly for tx-building flows where UTxO freshness matters.
+     * Yaci-store retains its role for historical queries via findUtxos.
+     */
+    public List<Utxo> findUtxosLive(String address) {
+        return getBlockfrostUtxos(address);
+    }
+
     private List<Utxo> getBlockfrostUtxos(String address) {
         try {
             var utxoResult = bfBackendService.getUtxoService().getUtxos(address, 100, 1);
